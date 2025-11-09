@@ -14,6 +14,8 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
 )
 logger = logging.getLogger(__name__)
+# Disable verbose logging from httpx
+logging.getLogger("httpx").setLevel(logging.WARNING)
 
 
 async def start(update: Update, context: CallbackContext) -> None:
@@ -24,6 +26,13 @@ async def start(update: Update, context: CallbackContext) -> None:
 
 async def google_search(update: Update, context: CallbackContext) -> None:
     message = update.message.text.strip()
+    chat_name = (
+        update.effective_chat.title
+        or update.effective_chat.username
+        or update.effective_chat.first_name
+        or "Unknown"
+    )
+    logger.info("%s in %s sent: %s", update.effective_user.username, chat_name, message)
     if message.lower().startswith("google"):
         query = message[6:].strip()
         if query:
@@ -44,7 +53,7 @@ def main() -> None:
     app = Application.builder().token(TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, google_search))
+    app.add_handler(MessageHandler(filters.TEXT, google_search))
 
     app.run_polling()
 
